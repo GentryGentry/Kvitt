@@ -1,0 +1,65 @@
+.scale {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  overflow: visible;
+}
+
+.column {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.base {
+  fill: var(--line);
+}
+
+.beamGroup,
+.swing {
+  transition: transform 640ms var(--spring);
+}
+
+.beam {
+  stroke: var(--text);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.pivot {
+  fill: var(--bg);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.pivotDot {
+  fill: var(--text);
+}
+
+.hanger {
+  stroke: var(--text-3);
+  stroke-width: 1;
+}
+
+.pan {
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.evil .pan {
+  fill: var(--evil-tint);
+  stroke: var(--evil);
+}
+
+.good .pan {
+  fill: var(--good-tint);
+  stroke: var(--good);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beamGroup,
+  .swing {
+    transition: none;
+  }
+}
