@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import { Cookie } from 'lucide-react';
 import { BalanceChart } from '../components/BalanceChart';
-import { RunningShoe } from '../components/icons';
+import { CookieIcon, RunningShoeIcon } from '../components/icons';
 import {
   balanceState,
   balanceTone,
@@ -119,10 +118,10 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
 
       <nav className={s.actions} aria-label="Logga">
         <button className={s.action} data-side="evil" onClick={onEat} aria-label="Jag åt något">
-          <Cookie size={40} strokeWidth={1.6} />
+          <CookieIcon size={44} />
         </button>
         <button className={s.action} data-side="good" onClick={onRun} aria-label="Jag sprang">
-          <RunningShoe size={40} strokeWidth={1.6} />
+          <RunningShoeIcon size={44} />
         </button>
       </nav>
     </main>
