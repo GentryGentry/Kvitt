@@ -61,6 +61,11 @@ export function Sheet({ kind, title, onClose, onDelete, children, footer }: Prop
         className={`sheet${out ? ' is-out' : ''}`}
         data-kind={kind}
         data-kb={kb}
+        onFocusCapture={(e) => {
+          // Tangentbordet tar plats: se till att fältet du skriver i hålls synligt.
+          const t = e.target as HTMLElement;
+          if (t.matches('input, textarea')) window.setTimeout(() => t.scrollIntoView({ block: 'nearest' }), 300);
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sheet-title"
