@@ -86,3 +86,24 @@ export function buildFoodDraft({ name, kcalText, picked, wantFavorite }: FoodFor
       : undefined,
   };
 }
+
+export const MIN_QTY = 0.5;
+export const MAX_QTY = 99;
+
+/** Antal upp eller ner: halva steg under 1 (0,5 → 1 → 2), annars hela. */
+export function stepQuantity(quantity: number, dir: 1 | -1): number {
+  const step = dir === 1 ? (quantity < 1 ? 0.5 : 1) : quantity <= 1 ? 0.5 : 1;
+  return Math.min(MAX_QTY, Math.max(MIN_QTY, Math.round((quantity + dir * step) * 100) / 100));
+}
+
+/**
+ * Nytt kcal när antalet ändras. Oredigerat värde räknas om från sakens kcal per enhet.
+ * Har du själv ändrat kcal skalas ditt värde med antalet, så att din justering behålls per enhet.
+ */
+export function rescaleKcal(picked: PickedFood, kcalText: string, nextQuantity: number): { kcal: number; baseKcal: number } {
+  const baseKcal = pickedKcal(picked.item, nextQuantity);
+  const current = exactKcal(kcalText);
+  const edited = current !== undefined && current !== picked.baseKcal;
+  const kcal = edited ? Math.round((current / picked.quantity) * nextQuantity) : baseKcal;
+  return { kcal: Math.min(MAX_KCAL, Math.max(1, kcal)), baseKcal };
+}

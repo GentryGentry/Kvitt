@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFoodDraft, exactKcal, pickedKcal } from './draft';
+import { buildFoodDraft, exactKcal, pickedKcal, rescaleKcal, stepQuantity } from './draft';
 import { commonDistances, favoriteItems, recentItems } from './stats';
 import { BUILTIN_ITEMS } from './foods';
 import type { FoodItem, RunEntry } from './types';
@@ -85,5 +85,34 @@ describe('snabbval', () => {
     expect(favoriteItems(items).map((i) => i.id)).toEqual(['a']);
     expect(recentItems(items).map((i) => i.id)).toEqual(['b', 'c']);
     expect(recentItems(items, 1).map((i) => i.id)).toEqual(['b']);
+  });
+});
+
+describe('antal', () => {
+  const kokos = BUILTIN_ITEMS.find((i) => i.name === 'Kokosboll')!;
+  const picked = (quantity: number) => ({ item: kokos, quantity, baseKcal: pickedKcal(kokos, quantity) });
+
+  it('steg: halva under 1, hela över, med gränser', () => {
+    expect(stepQuantity(1, 1)).toBe(2);
+    expect(stepQuantity(2, 1)).toBe(3);
+    expect(stepQuantity(3, -1)).toBe(2);
+    expect(stepQuantity(1, -1)).toBe(0.5);
+    expect(stepQuantity(0.5, 1)).toBe(1);
+    expect(stepQuantity(0.5, -1)).toBe(0.5);
+    expect(stepQuantity(99, 1)).toBe(99);
+  });
+  it('3 kokosbollar: kcal följer antalet och är fortfarande ca', () => {
+    const p = picked(1);
+    const next = rescaleKcal(p, String(p.baseKcal), 3);
+    expect(next).toEqual({ kcal: kokos.kcalPerUnit * 3, baseKcal: kokos.kcalPerUnit * 3 });
+    const d = buildFoodDraft({ name: 'Kokosboll', kcalText: String(next.kcal), picked: { ...p, quantity: 3, baseKcal: next.baseKcal }, wantFavorite: false })!;
+    expect(d.label).toBe('3 × Kokosboll');
+    expect(d.isEstimate).toBe(true);
+  });
+  it('egen justering skalas med antalet', () => {
+    const p = picked(2);
+    // Användaren sänkte 2 st från 300 till 240 (120 per st). Tre st blir 360.
+    expect(rescaleKcal(p, '240', 3).kcal).toBe(360);
+    expect(rescaleKcal(p, '240', 3).baseKcal).toBe(450);
   });
 });

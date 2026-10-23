@@ -8,6 +8,7 @@ import {
   formatKcal,
   formatKm,
   formatKmApprox,
+  formatQty,
   kcalPerKm,
   kmFromKcal,
   parseNumber,
@@ -18,7 +19,11 @@ import {
   KCAL_ERROR,
   KCAL_STEP,
   MAX_KCAL,
+  MAX_QTY,
+  MIN_QTY,
   pickedKcal,
+  rescaleKcal,
+  stepQuantity,
   type FoodDraft,
   type PickedFood,
 } from '../lib/draft';
@@ -174,6 +179,15 @@ export function FoodSheet({ items, settings, baseKm, onClose }: Props) {
       quantity: 1,
     });
 
+  function changeQuantity(dir: 1 | -1) {
+    if (!picked) return;
+    const quantity = stepQuantity(picked.quantity, dir);
+    if (quantity === picked.quantity) return;
+    const { kcal, baseKcal } = rescaleKcal(picked, kcalText, quantity);
+    setPicked({ ...picked, quantity, baseKcal });
+    setKcalText(String(kcal));
+  }
+
   function onName(v: string) {
     setName(v);
     if (picked) {
@@ -260,6 +274,21 @@ export function FoodSheet({ items, settings, baseKm, onClose }: Props) {
           <Icon name="alert" />
           <span>Ingen träff på ”{trimmed}”. Ange kcal själv så sparas den som ny.</span>
         </p>
+      )}
+
+      {picked && (
+        <Field id="s-qty" label="Antal">
+          <div className="field__input field__input--num" id="s-qty" role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center' }}>
+            {formatQty(picked.quantity)}
+          </div>
+          <span className="field__unit">{picked.item.unitLabel}</span>
+          <button className="step" type="button" aria-label="Minska antal" disabled={picked.quantity <= MIN_QTY} onClick={() => changeQuantity(-1)}>
+            <Icon name="minus" />
+          </button>
+          <button className="step" type="button" aria-label="Öka antal" disabled={picked.quantity >= MAX_QTY} onClick={() => changeQuantity(1)}>
+            <Icon name="plus" />
+          </button>
+        </Field>
       )}
 
       <Field id="s-val" label="Energi" error={kcalError}>

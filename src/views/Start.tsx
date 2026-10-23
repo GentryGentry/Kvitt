@@ -90,7 +90,7 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
         <div className="ledger__col" data-kind="ate" data-zero={roundTenth(ateKm) === 0 ? '' : undefined}>
           <h2 className="ledger__label">
             <Icon name="cookie" />
-            Åtit
+            Ätit
           </h2>
           <p className="ledger__total">
             <span>{formatDecimal(ateKm)}</span>
