@@ -126,3 +126,10 @@ html, body { position: fixed; inset: 0; width: 100%; }
 .sheet[data-kb="true"] .preview__foot { display: none; }
 .sheet[data-kb="true"] .preview__to { font-size: 24px; }
 .sheet[data-kb="true"] .btn { min-height: 48px; }
+
+/* Dra ner för att stänga. Handtaget och rubrikraden fångar draget; är innehållet kortare än arket gäller det hela arket. */
+.sheet { animation-fill-mode: backwards; }
+.grabber { position: relative; touch-action: none; }
+.grabber::after { content: ""; position: absolute; inset: -12px -48px; }
+.sheet__head { touch-action: none; }
+.sheet[data-scrollable="false"] { touch-action: none; }
