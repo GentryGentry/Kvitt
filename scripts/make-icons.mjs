@@ -1,35 +1,44 @@
-// Ritar appikonerna: "K" i varm off-white på debt-platta (färger ur kvitt.css, ljust tema). Kör: npm run icons
+// Ritar appikonerna: ordmärket "K●" på mörk platta. Färgerna kommer ur kvitt.css (mörkt tema).
+// Kör: npm run icons
 import sharp from 'sharp';
 import { mkdir, writeFile } from 'node:fs/promises';
 
-const PLATE = '#B8370C';
-const INK = '#F4F1EA';
+const PLATE = '#0B0B0C'; // --bg (mörkt)
+const INK = '#F2EFE8'; // --text (mörkt)
+const DOT = '#FF7A55'; // --debt (mörkt)
 
-// K ritad på ett 100×100-rutnät. scale = andel av ytan (maskable behöver säker zon).
-function svg(size, scale, rounded = 0) {
-  const s = size * scale;
-  const o = (size - s) / 2;
-  const p = (x, y) => `${(o + (x * s) / 100).toFixed(2)} ${(o + (y * s) / 100).toFixed(2)}`;
-  const poly = (pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${p(x, y)}`).join('') + 'Z';
-  const stem = poly([[26, 20], [43, 20], [43, 80], [26, 80]]);
-  const upper = poly([[43, 52], [66, 20], [86, 20], [58, 58]]);
-  const lower = poly([[50, 49], [88, 80], [67, 80], [43, 58]]);
+// K som en enda sammanhängande kontur (stam + två ben), 64 × 60 enheter.
+const K = [[0, 0], [17, 0], [17, 26], [40, 0], [62, 0], [33, 31], [64, 60], [41, 60], [17, 35], [17, 60], [0, 60]];
+const CAP = 60;
+const DOT_D = CAP * 0.38; // punktens diameter
+const GAP = 7; // luft mellan K och punkt
+const MARK_W = 64 + GAP + DOT_D; // hela märkets bredd
+
+// share = märkets bredd som andel av ikonen (maskable behöver större marginal).
+function svg(size, share, radius = 0) {
+  const k = (size * share) / MARK_W; // enheter -> pixlar
+  const ox = (size - MARK_W * k) / 2;
+  const oy = (size - CAP * k) / 2;
+  const pts = K.map(([x, y]) => `${(ox + x * k).toFixed(2)},${(oy + y * k).toFixed(2)}`).join(' ');
+  const cx = ox + (64 + GAP + DOT_D / 2) * k;
+  const cy = oy + (CAP - DOT_D / 2) * k;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <rect width="${size}" height="${size}" rx="${rounded}" fill="${PLATE}"/>
-    <path d="${stem}${upper}${lower}" fill="${INK}"/>
+    <rect width="${size}" height="${size}" rx="${radius}" fill="${PLATE}"/>
+    <polygon points="${pts}" fill="${INK}"/>
+    <circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${((DOT_D / 2) * k).toFixed(2)}" fill="${DOT}"/>
   </svg>`;
 }
 
 const out = [
-  ['apple-touch-icon.png', 180, 1.0],
-  ['icon-192.png', 192, 1.0],
-  ['icon-512.png', 512, 1.0],
-  ['icon-maskable-512.png', 512, 0.78],
+  ['apple-touch-icon.png', 180, 0.56],
+  ['icon-192.png', 192, 0.56],
+  ['icon-512.png', 512, 0.56],
+  ['icon-maskable-512.png', 512, 0.42],
 ];
 
 await mkdir('public', { recursive: true });
-for (const [name, size, scale] of out) {
-  await sharp(Buffer.from(svg(size, scale))).png().toFile(`public/${name}`);
+for (const [name, size, share] of out) {
+  await sharp(Buffer.from(svg(size, share))).png().toFile(`public/${name}`);
 }
-await writeFile('public/favicon.svg', svg(64, 1.0, 14));
+await writeFile('public/favicon.svg', svg(64, 0.56, 14));
 console.log('Ikoner klara.');
