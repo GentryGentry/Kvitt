@@ -35,7 +35,7 @@ export interface ChartLayout {
   line: string;
   area: string;
   last: { x: number; y: number; kind: Kind };
-  notes: { x: number; y: number; text: string; delta: number }[];
+  notes: { x: number; y: number; text: string; delta: number; anchor: 'start' | 'end'; tx: number }[];
   y: (v: number) => number;
   hi: number;
   lo: number;
@@ -78,13 +78,23 @@ export function layoutChart(points: ChartInput[], W: number, H: number): ChartLa
   const line = n >= 2 ? points.map((p, i) => `${i ? 'L' : 'M'}${f(x(i))} ${f(y(p.value))}`).join('') : '';
   const area = n >= 2 ? `${line}L${f(x(n - 1))} ${f(yz)}L${f(x(0))} ${f(yz)}Z` : '';
 
-  const notes: ChartLayout['notes'] = [];
+  // Högst två etiketter, de största hoppen, med minst 110 px mellan. Etiketten hålls inom diagrammet.
+  const candidates: { x: number; y: number; text: string; delta: number }[] = [];
   for (let i = 1; i < n; i++) {
     const text = points[i].note;
     const delta = vs[i] - vs[i - 1];
     if (text && Math.abs(delta) > JUMP_SHARE * (hi - lo)) {
-      notes.push({ x: (x(i) + x(i - 1)) / 2, y: (y(vs[i]) + y(vs[i - 1])) / 2, text, delta });
+      candidates.push({ x: (x(i) + x(i - 1)) / 2, y: (y(vs[i]) + y(vs[i - 1])) / 2, text, delta });
     }
+  }
+  candidates.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  const notes: ChartLayout['notes'] = [];
+  for (const c of candidates) {
+    if (notes.length >= 2) break;
+    if (notes.some((o) => Math.abs(o.x - c.x) < 110)) continue;
+    const width = (c.text.length + 7) * 6.5;
+    const fitsLeft = c.x - 10 - width >= x0;
+    notes.push({ ...c, anchor: fitsLeft ? 'end' : 'start', tx: fitsLeft ? c.x - 10 : c.x + 10 });
   }
 
   const lastValue = vs[n - 1] ?? 0;

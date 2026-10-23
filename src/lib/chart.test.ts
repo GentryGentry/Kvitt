@@ -64,3 +64,15 @@ describe('hjälpfunktioner', () => {
     expect(nearestIndex([10, 50, 90], 1000)).toBe(2);
   });
 });
+
+describe('etiketter', () => {
+  it('högst två, minst 110 px isär, och inom diagrammet', () => {
+    const p = [0, -20, 0, -20, 0, -20, 0].map((value, i) => ({ value, note: `Post ${i}`.repeat(3) }));
+    const l = layoutChart(p, 390, 300);
+    expect(l.notes.length).toBeLessThanOrEqual(2);
+    if (l.notes.length === 2) expect(Math.abs(l.notes[0].x - l.notes[1].x)).toBeGreaterThanOrEqual(110);
+    for (const n of l.notes) {
+      if (n.anchor === 'end') expect(n.tx - (n.text.length + 7) * 6.5).toBeGreaterThanOrEqual(l.x0);
+    }
+  });
+});

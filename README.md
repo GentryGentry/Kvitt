@@ -13,4 +13,4 @@ npm run icons      # rita om ikonerna i public/
 
 Logiken ligger i `src/lib` utan UI-beroenden. Gränssnittet ligger i `src/views` och `src/components`.
 
-Status: modell, beräkning, tolkning, start/våg och loggning av mat och löpning. Historik, statistik och inställningar återstår.
+Status: start, loggning, ⋯-meny, Historik, Statistik, Inställningar (vikt, faktor, tema, nollställning, import/export, sparade saker). Utseendet följer designöverlämningen i `src/styles/kvitt.css` (oförändrad); appens egna tillägg ligger i `src/styles/app.css`.

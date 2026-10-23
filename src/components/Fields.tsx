@@ -7,14 +7,16 @@ interface FieldProps {
   label: string;
   hero?: boolean;
   error?: string;
+  /** Etiketten finns för skärmläsare men syns inte. */
+  hideLabel?: boolean;
   children: ReactNode;
 }
 
 /** Fältram med etikett och felmeddelande. Fel visas aldrig i rött, utan i text med varningsikon. */
-export function Field({ id, label, hero, error, children }: FieldProps) {
+export function Field({ id, label, hero, error, hideLabel, children }: FieldProps) {
   return (
     <div className={`field${hero ? ' field--hero' : ''}${error ? ' is-error' : ''}`}>
-      <label className="field__label" htmlFor={id}>
+      <label className={`field__label${hideLabel ? ' sr-only' : ''}`} htmlFor={id}>
         {label}
       </label>
       <div className="field__box">{children}</div>
@@ -45,13 +47,16 @@ export const TextInput = forwardRef<HTMLInputElement, InputProps>(function TextI
   { id, value, onChange, onBlur, onEnter, placeholder, inputMode, num, hero, invalid, enterKeyHint },
   ref,
 ) {
-  const chars = Math.max(1, (value || placeholder || '').length);
+  const shown = value || placeholder || '';
+  const seps = (shown.match(/[.,]/g) ?? []).length;
+  const digits = Math.max(1, shown.length - seps);
   return (
     <input
       ref={ref}
       id={id}
       className={`field__input${num ? ' field__input--num' : ''}`}
-      style={hero ? { width: `${chars}ch` } : undefined}
+      // Siffror är 1ch, decimaltecken smalare, och bokstavsavståndet är negativt.
+      style={hero ? { width: `calc(${digits}ch + ${seps * 0.4}ch - ${shown.length * 0.05}em + 2px)` } : undefined}
       value={value}
       placeholder={placeholder}
       inputMode={inputMode}

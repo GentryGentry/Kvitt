@@ -1,7 +1,7 @@
 import { db, newId } from './db';
-import { kcalPerKm, makeFoodFields, roundRunKm, withEditedKcal } from './calc';
+import { computeBalance, kcalPerKm, makeFoodFields, roundRunKm, withEditedKcal } from './calc';
 import { tokenize } from './parse';
-import type { FoodEntry, FoodItem, RunEntry, Settings } from './types';
+import type { FoodEntry, FoodItem, ResetMarker, RunEntry, Settings } from './types';
 
 export async function saveSettings(patch: Partial<Settings>): Promise<void> {
   const row = await db.settings.get('main');
@@ -53,7 +53,15 @@ export async function logFood(input: LogFoodInput): Promise<Logged<FoodEntry>> {
   let before: FoodItem | undefined;
   let created: string | undefined;
 
-  await db.transaction('rw', db.foods, db.items, async () => {
+  await db.transaction('rw', db.foods, db.items, db.resets, async () => {
+    await clearUndoable();
+    if (input.item) entry.itemId = input.item.id;
+    if (input.newItem) {
+      const dup = (await db.items.toArray()).find(
+        (i) => i.source !== 'builtin' && sameName(i.name, input.newItem!.name),
+      );
+      entry.itemId = dup?.id ?? (created = newId());
+    }
     await db.foods.add(entry);
     if (input.item) {
       const cur = (await db.items.get(input.item.id)) ?? input.item;
@@ -65,9 +73,7 @@ export async function logFood(input: LogFoodInput): Promise<Logged<FoodEntry>> {
         lastQuantity: input.quantity,
       });
     } else if (input.newItem) {
-      const existing = (await db.items.toArray()).find(
-        (i) => i.source !== 'builtin' && sameName(i.name, input.newItem!.name),
-      );
+      const existing = (await db.items.toArray()).find((i) => i.id === entry.itemId);
       if (existing) {
         before = existing;
         await db.items.put({
@@ -79,9 +85,8 @@ export async function logFood(input: LogFoodInput): Promise<Logged<FoodEntry>> {
           lastQuantity: input.quantity,
         });
       } else {
-        created = newId();
         await db.items.add({
-          id: created,
+          id: created!,
           name: input.newItem.name,
           kcalPerUnit: input.newItem.kcalPerUnit,
           unitLabel: input.newItem.unitLabel,
@@ -110,7 +115,10 @@ export async function logFood(input: LogFoodInput): Promise<Logged<FoodEntry>> {
 
 export async function logRun(km: number, at: string): Promise<Logged<RunEntry>> {
   const entry: RunEntry = { id: newId(), at, km: roundRunKm(km) };
-  await db.runs.add(entry);
+  await db.transaction('rw', db.runs, db.resets, async () => {
+    await clearUndoable();
+    await db.runs.add(entry);
+  });
   return { entry, undo: async () => void (await db.runs.delete(entry.id)) };
 }
 
@@ -144,3 +152,60 @@ export async function toggleFavorite(item: FoodItem): Promise<void> {
 }
 
 
+
+// --- Nollställning ---
+
+/** Ingen nollställning går att ångra efter att en ny post loggats. */
+async function clearUndoable(): Promise<void> {
+  await db.resets.toCollection().modify((r) => {
+    if (r.undoable) r.undoable = false;
+  });
+}
+
+export async function resetBalance(balanceKm: number): Promise<ResetMarker> {
+  const marker: ResetMarker = {
+    id: newId(),
+    at: new Date().toISOString(),
+    balanceBeforeKm: balanceKm,
+    undoable: true,
+  };
+  await db.resets.add(marker);
+  return marker;
+}
+
+/** Tar bort senaste markören om den fortfarande går att ångra. Returnerar true om något ångrades. */
+export async function undoReset(): Promise<boolean> {
+  return db.transaction('rw', db.resets, async () => {
+    const all = await db.resets.toArray();
+    const latest = all.sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+    if (!latest?.undoable) return false;
+    await db.resets.delete(latest.id);
+    return true;
+  });
+}
+
+/** Saldot just nu, för att spara i markören. */
+export async function currentBalanceKm(): Promise<number> {
+  const [foods, runs, resets] = await Promise.all([db.foods.toArray(), db.runs.toArray(), db.resets.toArray()]);
+  return computeBalance({ foods, runs, resets }).balanceKm;
+}
+
+// --- Sparade saker ---
+
+export interface ItemPatch {
+  name: string;
+  kcalPerUnit: number;
+  unitLabel: string;
+  aliases: string[];
+}
+
+/** Ändrad kcal på en inbyggd sak gör den till din egen: exakt, inte riktvärde. */
+export async function updateItem(item: FoodItem, patch: ItemPatch): Promise<void> {
+  const becomesOwn = item.source === 'builtin' && patch.kcalPerUnit !== item.kcalPerUnit;
+  await db.items.put({ ...item, ...patch, source: becomesOwn ? 'custom' : item.source });
+}
+
+export async function deleteItem(item: FoodItem): Promise<() => Promise<void>> {
+  await db.items.delete(item.id);
+  return async () => void (await db.items.put(item));
+}

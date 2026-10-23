@@ -28,12 +28,13 @@ function useViewport(): boolean {
 }
 
 interface Props {
-  kind: 'ate' | 'ran';
+  /** Färgar sheeten (ond/god). Utelämnat = neutral. */
+  kind?: 'ate' | 'ran';
   title: string;
   onClose: () => void;
   onDelete?: () => void;
   children: ReactNode;
-  footer: ReactNode;
+  footer?: ReactNode;
 }
 
 const OUT_MS = 160;
@@ -81,7 +82,7 @@ export function Sheet({ kind, title, onClose, onDelete, children, footer }: Prop
           </span>
         </header>
         <div className="sheet__body">{children}</div>
-        <div className="sheet__foot">{footer}</div>
+        {footer && <div className="sheet__foot">{footer}</div>}
       </section>
     </>
   );

@@ -93,3 +93,37 @@ export function fromLocalInput(value: string): string | undefined {
   if (off2 !== offsetMinutes(wall)) ms = wall - off2 * 60000;
   return new Date(ms).toISOString();
 }
+
+const DOW = ['sön', 'mån', 'tis', 'ons', 'tors', 'fre', 'lör'];
+const MON = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function keyParts(key: string): { y: number; m: number; d: number } {
+  const [y, m, d] = key.split('-').map(Number);
+  return { y, m, d };
+}
+
+/** "22 okt" för en dagsnyckel (Stockholmstid). */
+export function shortFromKey(key: string): string {
+  const { m, d } = keyParts(key);
+  return `${d} ${MON[m - 1]}`;
+}
+
+/** "Idag", "Igår" eller "tors 22 okt". */
+export function dayLabel(key: string, todayKey: string): string {
+  if (key === todayKey) return 'Idag';
+  const { y, m, d } = keyParts(key);
+  const t = keyParts(todayKey);
+  const yesterday = new Date(Date.UTC(t.y, t.m - 1, t.d - 1)).toISOString().slice(0, 10);
+  if (key === yesterday) return 'Igår';
+  return `${DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]} ${d} ${MON[m - 1]}`;
+}
+
+/** Heltal dagar mellan två dagsnycklar (a − b). */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / 86400000);
+}
+
+export function addDaysToKey(key: string, delta: number): string {
+  const { y, m, d } = keyParts(key);
+  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
+}

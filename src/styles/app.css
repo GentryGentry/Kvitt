@@ -106,3 +106,9 @@ html, body {
 
 /* Fokusringen ritas av fältramen (:focus-within), inte av själva inmatningen. */
 .kvitt .field__input:focus-visible { outline: none; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.kvitt-view { height: 100%; }
+.page__body .list-empty { max-width: 560px; }
+.sheet .kv { margin: -4px -4px 0; }
+.sheet .kv__row { padding-left: 4px; padding-right: 4px; }

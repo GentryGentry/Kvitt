@@ -14,6 +14,7 @@ import {
   roundTenth,
 } from '../lib/calc';
 import { pickLine } from '../lib/copy';
+import { figure } from '../lib/figure';
 import { balanceSeries } from '../lib/stats';
 import { dayKey, formatWhen } from '../lib/time';
 import type { FoodEntry, ResetMarker, RunEntry, Settings } from '../lib/types';
@@ -27,6 +28,7 @@ interface Props {
   onRun: () => void;
   onEditFood: (e: FoodEntry) => void;
   onEditRun: (e: RunEntry) => void;
+  onMenu: () => void;
 }
 
 function latest<T extends { at: string }>(list: T[]): T | undefined {
@@ -35,23 +37,9 @@ function latest<T extends { at: string }>(list: T[]): T | undefined {
   return best;
 }
 
-/** Saldot delat i tecken, heltal och decimal. Heltalssiffrorna styr storleken (3 siffror 92 px, 4+ 72 px). */
-export function figure(km: number) {
-  const r = Math.abs(roundTenth(km));
-  const int = Math.floor(r + 1e-9);
-  const dec = Math.round((r - int) * 10);
-  const tone = balanceTone(km);
-  return {
-    sign: tone === 'plus' ? '+' : tone === 'minus' ? '−' : '',
-    int: formatDecimal(int, 0),
-    dec: `,${dec}`,
-    digits: Math.min(4, String(int).length),
-  };
-}
-
 const INK = { plus: 'var(--credit)', minus: 'var(--debt)', zero: 'var(--text)' } as const;
 
-export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood, onEditRun }: Props) {
+export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood, onEditRun, onMenu }: Props) {
   const [scrub, setScrub] = useState<number | null>(null);
   const { balanceKm, ranKm, ateKm, count } = useMemo(
     () => computeBalance({ foods, runs, resets }),
@@ -77,6 +65,9 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
     <main className="screen home" data-state={state}>
       <header className="home__head">
         <Brand />
+        <button className="nav-btn" type="button" onClick={onMenu} aria-label="Meny">
+          <Icon name="more" />
+        </button>
       </header>
 
       <section className="balance" aria-label="Saldo">

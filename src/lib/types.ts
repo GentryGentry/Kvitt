@@ -17,6 +17,8 @@ export interface FoodEntry {
   kcalPerKmUsed: number;
   /** Fryst vid loggning: kcal / kcalPerKmUsed. */
   kmEquivalent: number;
+  /** Saken posten kom från, för favoritstjärna och statistik. Saknas på poster utan sparad sak. */
+  itemId?: string;
 }
 
 export interface RunEntry {
@@ -29,6 +31,8 @@ export interface ResetMarker {
   id: string;
   at: string;
   balanceBeforeKm: number;
+  /** Sant tills nästa post loggas. Då går nollställningen att ångra. */
+  undoable?: boolean;
 }
 
 export type FoodSource = 'builtin' | 'learned' | 'custom';

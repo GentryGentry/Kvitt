@@ -1,41 +1,32 @@
-import { useEffect, useId, useRef, useState, type PointerEvent } from 'react';
+import { useId, type PointerEvent } from 'react';
 import { formatKm } from '../lib/calc';
 import { formatTick, kindOf, layoutChart, nearestIndex, type ChartInput } from '../lib/chart';
 import { formatShortDate } from '../lib/time';
 import type { SeriesPoint } from '../lib/stats';
+import { useSize } from './useSize';
 
 interface Props {
   points: SeriesPoint[];
   scrub: number | null;
   onScrub: (index: number | null) => void;
+  className?: string;
+  /** Egen bildtext för skärmläsare. */
+  ariaLabel?: string;
 }
 
 const fmt = (v: number) => formatKm(v, { unit: false });
 const dayLabel = (day: string) => formatShortDate(`${day}T12:00:00Z`);
 
-export function Chart({ points, scrub, onScrub }: Props) {
-  const ref = useRef<HTMLElement>(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
+export function Chart({ points, scrub, onScrub, className = '', ariaLabel }: Props) {
+  const [ref, size] = useSize<HTMLElement>();
   const id = useId().replace(/:/g, '');
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => setSize({ w: el.clientWidth, h: el.clientHeight });
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   const { w: W, h: H } = size;
   const n = points.length;
   const inputs: ChartInput[] = points.map((p) => ({ value: p.value, note: p.note }));
   const lay = W && H ? layoutChart(inputs, W, H) : null;
   const last = n ? points[n - 1].value : 0;
-  const label = n
-    ? `Saldo senaste ${n} dagarna, idag ${fmt(last)} km`
-    : 'Saldo: inga poster än';
+  const label =
+    ariaLabel ?? (n ? `Saldo senaste ${n} dagarna, idag ${fmt(last)} km` : 'Saldo: inga poster än');
 
   function at(e: PointerEvent) {
     if (!lay || n < 2) return;
@@ -46,7 +37,7 @@ export function Chart({ points, scrub, onScrub }: Props) {
   const R = 20;
   return (
     <figure
-      className="chart"
+      className={`chart ${className}`.trim()}
       ref={ref}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -92,7 +83,7 @@ export function Chart({ points, scrub, onScrub }: Props) {
               );
             })}
           {lay.notes.map((nt) => (
-            <text key={nt.x} className="chart__note" x={nt.x - 10} y={nt.y + 4} textAnchor="end">
+            <text key={nt.x} className="chart__note" x={nt.tx} y={nt.y + 4} textAnchor={nt.anchor}>
               <tspan>{nt.text} </tspan>
               <tspan>{fmt(nt.delta)}</tspan>
             </text>
