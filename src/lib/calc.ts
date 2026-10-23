@@ -9,7 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
 export const MIN_RUN_KM = 0.1;
 export const MAX_RUN_KM = 200;
 export const MIN_WEIGHT_KG = 30;
-export const MAX_WEIGHT_KG = 300;
+export const MAX_WEIGHT_KG = 250;
 
 const NBSP = ' ';
 const MINUS = '−';
@@ -177,6 +177,6 @@ export function validateRunKm(km: number | undefined): string | undefined {
 
 export function validateWeight(kg: number | undefined): string | undefined {
   if (kg === undefined) return 'Ange din vikt i kilo.';
-  if (kg < MIN_WEIGHT_KG || kg > MAX_WEIGHT_KG) return 'Ange en vikt mellan 30 och 300 kg.';
+  if (kg < MIN_WEIGHT_KG || kg > MAX_WEIGHT_KG) return 'Ange mellan 30 och 250 kg.';
   return undefined;
 }

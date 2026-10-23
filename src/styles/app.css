@@ -1,0 +1,108 @@
+/* ==========================================================================
+   Appens tillägg till kvitt.css. kvitt.css är oförändrad (källa: designöverlämningen).
+   Här ligger bara det som skiljer en prototyp på 390×844 från en riktig app.
+   ========================================================================== */
+
+/* Auto-tema: kvitt.css känner bara data-theme="light|dark". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0B0B0C;
+    --surface: #161617;
+    --field: #0B0B0C;
+    --sunken: #212123;
+    --text: #F2EFE8;
+    --text-2: #ABA79D;
+    --text-3: #8D897F;
+    --line: #262628;
+    --line-strong: #47474A;
+    --edge: #6F6C66;
+    --debt: #FF7A55;
+    --debt-tint: rgba(255, 122, 85, .16);
+    --on-debt: #0B0B0C;
+    --credit: #5BCB9B;
+    --credit-tint: rgba(91, 203, 155, .16);
+    --on-credit: #0B0B0C;
+    --inverse: #F2EFE8;
+    --on-inverse: #0B0B0C;
+    --scrim: rgba(0, 0, 0, .6);
+    --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, .5);
+  }
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+}
+#root { height: 100vh; height: 100dvh; }
+.app { position: relative; height: 100%; }
+
+/* Riktig skärm i stället för 390×844. */
+.screen { width: 100%; max-width: 560px; height: 100%; margin: 0 auto; }
+
+/* Överlägg ligger över hela fönstret, inte över en telefonram. */
+.scrim { position: fixed; }
+.scrim.is-out { animation: fade-out 160ms linear both; }
+.sheet {
+  position: fixed;
+  max-width: 560px;
+  margin: 0 auto;
+  bottom: var(--kb, 0px);
+  max-height: calc(var(--vvh, 100dvh) - 12px);
+}
+.sheet[data-kb="true"] { padding-bottom: var(--s-3); }
+.sheet.is-out { animation: sheet-out 160ms ease-in both; }
+.sheet__body {
+  display: grid;
+  gap: var(--s-4);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* rymd så att fokusringen (2 px förskjutning) inte klipps */
+  padding: 4px;
+  margin: -4px;
+}
+.sheet__foot { display: grid; gap: var(--s-4); }
+.toast { position: fixed; max-width: 560px; margin: 0 auto; }
+.toast::after { animation-duration: 6s; }
+.toast.is-out { animation: fade-out 120ms linear both; }
+@keyframes sheet-out { to { transform: translateY(32px); opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+
+/* Hjältefältet: bredden sätts i JS (field-sizing stöds inte före Safari 26). */
+.field--hero .field__input { max-width: 6ch; }
+
+.chart { cursor: crosshair; user-select: none; -webkit-user-select: none; }
+.field__msg[hidden] { display: none; }
+.field__input[type="datetime-local"] { min-height: 50px; }
+
+/* Understruken textknapp, till exempel "Ändra tid". Ritad för appen, finns inte i referensen. */
+.text-btn {
+  justify-self: start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--t-caption);
+  letter-spacing: var(--ls-caption);
+  color: var(--text-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--edge);
+}
+.text-btn .i { width: 16px; height: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet.is-out, .scrim.is-out { animation: fade-out 1ms linear both; }
+}
+
+/* Lagerordning: sheet över scrim, toast under båda (den stängs när ett sheet öppnas). */
+.toast { z-index: 30; }
+.scrim { z-index: 40; }
+.sheet { z-index: 41; }
+
+/* Fokusringen ritas av fältramen (:focus-within), inte av själva inmatningen. */
+.kvitt .field__input:focus-visible { outline: none; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFoodDraft, exactKcal } from './draft';
+import { buildFoodDraft, exactKcal, pickedKcal } from './draft';
 import { commonDistances, favoriteItems, recentItems } from './stats';
 import { BUILTIN_ITEMS } from './foods';
 import type { FoodItem, RunEntry } from './types';
@@ -7,51 +7,59 @@ import type { FoodItem, RunEntry } from './types';
 const kanel = BUILTIN_ITEMS.find((i) => i.name === 'Kanelbulle')!;
 
 describe('buildFoodDraft', () => {
-  it('vald inbyggd sak är en uppskattning', () => {
-    const d = buildFoodDraft({ text: '2 kanelbullar', kcalText: '', selected: { item: kanel, quantity: 2 }, saveAsCustom: true })!;
+  const pick = (item: FoodItem, quantity: number) => ({ item, quantity, baseKcal: pickedKcal(item, quantity) });
+
+  it('"2 kanelbullar" ger 600 kcal och är en uppskattning', () => {
+    const picked = pick(kanel, 2);
+    const d = buildFoodDraft({ name: 'Kanelbulle', kcalText: String(picked.baseKcal), picked, wantFavorite: false })!;
     expect(d.kcal).toBe(600);
     expect(d.isEstimate).toBe(true);
     expect(d.label).toBe('2 × Kanelbulle');
     expect(d.newItem).toBeUndefined();
   });
-  it('exakt kcal går före tolkningen och tar bort ca', () => {
-    const d = buildFoodDraft({ text: 'kanelbulle', kcalText: '412', selected: { item: kanel, quantity: 1 }, saveAsCustom: true })!;
-    expect(d.kcal).toBe(412);
+  it('ändrat kcal-värde tar bort "ca"', () => {
+    const picked = pick(kanel, 1);
+    const d = buildFoodDraft({ name: 'Kanelbulle', kcalText: '350', picked, wantFavorite: false })!;
+    expect(d.kcal).toBe(350);
     expect(d.isEstimate).toBe(false);
   });
   it('okänd sak med egen kcal sparas som egen sak', () => {
-    const d = buildFoodDraft({ text: 'mammas lussekaka', kcalText: '350', selected: null, saveAsCustom: true })!;
+    const d = buildFoodDraft({ name: 'mammas lussekaka', kcalText: '350', picked: null, wantFavorite: false })!;
     expect(d.isEstimate).toBe(false);
     expect(d.kcal).toBe(350);
     expect(d.label).toBe('Mammas lussekaka');
-    expect(d.newItem).toMatchObject({ name: 'Mammas lussekaka', kcalPerUnit: 350, source: 'custom' });
+    expect(d.newItem).toMatchObject({ name: 'Mammas lussekaka', kcalPerUnit: 350, source: 'custom', isFavorite: false });
   });
-  it('kan sparas som inlärd i stället', () => {
-    const d = buildFoodDraft({ text: 'kaka', kcalText: '200', selected: null, saveAsCustom: false })!;
-    expect(d.newItem?.source).toBe('learned');
+  it('stjärnan på en ny sak gör den till favorit', () => {
+    const d = buildFoodDraft({ name: 'kaka', kcalText: '200', picked: null, wantFavorite: true })!;
+    expect(d.newItem?.isFavorite).toBe(true);
   });
   it('antal i texten delar totalen till kcal per enhet', () => {
-    const d = buildFoodDraft({ text: '3 mammas kakor', kcalText: '900', selected: null, saveAsCustom: true })!;
+    const d = buildFoodDraft({ name: '3 mammas kakor', kcalText: '900', picked: null, wantFavorite: false })!;
     expect(d.quantity).toBe(3);
     expect(d.newItem).toMatchObject({ name: 'Mammas kakor', kcalPerUnit: 300, unitLabel: 'st' });
     expect(d.kcal).toBe(900);
   });
-  it('går inte att logga okänd sak utan kcal', () => {
-    expect(buildFoodDraft({ text: 'något okänt', kcalText: '', selected: null, saveAsCustom: true })).toBeUndefined();
+  it('går inte att logga utan giltig kcal', () => {
+    expect(buildFoodDraft({ name: 'något okänt', kcalText: '', picked: null, wantFavorite: false })).toBeUndefined();
+    const picked = pick(kanel, 1);
+    expect(buildFoodDraft({ name: 'Kanelbulle', kcalText: '', picked, wantFavorite: false })).toBeUndefined();
   });
   it('bara kcal utan text loggas som "Något" utan att sparas', () => {
-    const d = buildFoodDraft({ text: '', kcalText: '500', selected: null, saveAsCustom: true })!;
+    const d = buildFoodDraft({ name: '', kcalText: '500', picked: null, wantFavorite: false })!;
     expect(d.label).toBe('Något');
     expect(d.newItem).toBeUndefined();
   });
   it('egen sak som används igen är inte en uppskattning', () => {
     const custom: FoodItem = { ...kanel, id: 'c', source: 'custom' };
-    const d = buildFoodDraft({ text: '', kcalText: '', selected: { item: custom, quantity: 1 }, saveAsCustom: true })!;
+    const picked = pick(custom, 1);
+    const d = buildFoodDraft({ name: custom.name, kcalText: '300', picked, wantFavorite: false })!;
     expect(d.isEstimate).toBe(false);
   });
-  it('validerar kcal', () => {
+  it('validerar kcal 1–5 000', () => {
     expect(exactKcal('0')).toBeUndefined();
-    expect(exactKcal('20001')).toBeUndefined();
+    expect(exactKcal('5001')).toBeUndefined();
+    expect(exactKcal('5000')).toBe(5000);
     expect(exactKcal('abc')).toBeUndefined();
     expect(exactKcal('412,6')).toBe(413);
   });

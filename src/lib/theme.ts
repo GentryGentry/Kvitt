@@ -1,6 +1,6 @@
 import type { ThemeChoice } from './types';
 
-const BG = { light: '#F5F2EC', dark: '#0B0B0C' };
+const BG = { light: '#F4F1EA', dark: '#0B0B0C' };
 
 export function applyTheme(theme: ThemeChoice): void {
   const root = document.documentElement;

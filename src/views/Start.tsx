@@ -1,20 +1,22 @@
-import { useMemo } from 'react';
-import { BalanceChart } from '../components/BalanceChart';
-import { CookieIcon, RunningShoeIcon } from '../components/icons';
+import { useMemo, useState } from 'react';
+import { Brand } from '../components/Brand';
+import { Chart } from '../components/Chart';
+import { Icon } from '../components/Icon';
 import {
   balanceState,
   balanceTone,
   computeBalance,
+  formatDecimal,
   formatKcal,
   formatKm,
   isActive,
   kcalPerKm,
+  roundTenth,
 } from '../lib/calc';
 import { pickLine } from '../lib/copy';
 import { balanceSeries } from '../lib/stats';
 import { dayKey, formatWhen } from '../lib/time';
 import type { FoodEntry, ResetMarker, RunEntry, Settings } from '../lib/types';
-import s from './Start.module.css';
 
 interface Props {
   settings: Settings;
@@ -33,95 +35,120 @@ function latest<T extends { at: string }>(list: T[]): T | undefined {
   return best;
 }
 
+/** Saldot delat i tecken, heltal och decimal. Heltalssiffrorna styr storleken (3 siffror 92 px, 4+ 72 px). */
+export function figure(km: number) {
+  const r = Math.abs(roundTenth(km));
+  const int = Math.floor(r + 1e-9);
+  const dec = Math.round((r - int) * 10);
+  const tone = balanceTone(km);
+  return {
+    sign: tone === 'plus' ? '+' : tone === 'minus' ? '−' : '',
+    int: formatDecimal(int, 0),
+    dec: `,${dec}`,
+    digits: Math.min(4, String(int).length),
+  };
+}
+
+const INK = { plus: 'var(--credit)', minus: 'var(--debt)', zero: 'var(--text)' } as const;
+
 export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood, onEditRun }: Props) {
+  const [scrub, setScrub] = useState<number | null>(null);
   const { balanceKm, ranKm, ateKm, count } = useMemo(
     () => computeBalance({ foods, runs, resets }),
     [foods, runs, resets],
   );
-  const tone = balanceTone(balanceKm);
-  const state = balanceState(balanceKm, count);
   const today = dayKey(new Date());
-  const line = pickLine(state, today);
+  const series = useMemo(() => balanceSeries({ foods, runs, resets }, today), [foods, runs, resets, today]);
+
+  const tone = balanceTone(balanceKm);
+  const state = count === 0 ? 'empty' : tone === 'minus' ? 'debt' : tone === 'plus' ? 'credit' : 'zero';
+  const tag = tone === 'minus' ? 'Skuld' : tone === 'plus' ? 'Tillgodo' : 'Jämnt';
+  const note = pickLine(balanceState(balanceKm, count), today);
+  const kcal = Math.abs(balanceKm) * kcalPerKm(settings);
+
+  const shown = scrub !== null && series[scrub] ? series[scrub].value : balanceKm;
+  const fig = figure(shown);
+  const figInk = INK[balanceTone(shown)];
 
   const lastFood = latest(foods.filter((f) => isActive(f.at, resets)));
   const lastRun = latest(runs.filter((r) => isActive(r.at, resets)));
 
-  const series = useMemo(
-    () => balanceSeries({ foods, runs, resets }, today),
-    [foods, runs, resets, today],
-  );
-
-  const numberText = formatKm(balanceKm, { sign: true, unit: false });
-  const status = tone === 'minus' ? 'Skuld' : tone === 'plus' ? 'Tillgodo' : 'Jämnt';
-  const kcal = Math.abs(balanceKm) * kcalPerKm(settings);
-  const ariaLabel =
-    tone === 'zero'
-      ? 'Saldokurva, senaste 14 dagarna: jämnt'
-      : `Saldokurva, senaste 14 dagarna. Nu: ${status.toLowerCase()} ${formatKm(Math.abs(balanceKm))}`;
-
   return (
-    <main className={s.root}>
-      <header className={s.top}>
-        <h1 className={s.brand}>Kvitt</h1>
+    <main className="screen home" data-state={state}>
+      <header className="home__head">
+        <Brand />
       </header>
 
-      <section className={s.readout} aria-live="polite">
-        <div className={s.number} data-tone={tone} data-size={numberText.length > 6 ? 'xs' : numberText.length > 5 ? 's' : 'm'}>
-          <span className={s.digits}>{numberText}</span>
-          <span className={s.unitKm}>km</span>
-        </div>
-        <p className={s.status}>
-          <span>{status}</span>
-          {tone !== 'zero' && <span className={s.kcal}>{formatKcal(kcal, { approx: true, round: 10 })}</span>}
+      <section className="balance" aria-label="Saldo">
+        <p className="balance__figure" data-digits={fig.digits} style={{ ['--ink' as string]: figInk }}>
+          <span>{fig.sign}</span>
+          <span>{fig.int}</span>
+          <span className="balance__dec">{fig.dec}</span>
+          <span className="balance__unit">km</span>
         </p>
-        <p className={s.line}>{line}</p>
+        <p className="balance__status">
+          <span className="tag">{tag}</span>
+          {tone !== 'zero' && <span>{formatKcal(kcal, { approx: true, round: 10 })}</span>}
+        </p>
+        <p className="balance__note">{note}</p>
       </section>
 
-      <div className={s.scaleWrap}>
-        <BalanceChart points={series} label={ariaLabel} />
-      </div>
+      <Chart points={series} scrub={scrub} onScrub={setScrub} />
 
-      <section className={s.cols}>
-        <div className={s.col} data-side="evil">
-          <div className={s.colHead}>
-            <span>Åtit</span>
-            <span className={s.colSum}>{formatKm(ateKm)}</span>
-          </div>
+      <section className="ledger" aria-label="Totalt">
+        <div className="ledger__col" data-kind="ate" data-zero={roundTenth(ateKm) === 0 ? '' : undefined}>
+          <h2 className="ledger__label">
+            <Icon name="cookie" />
+            Åtit
+          </h2>
+          <p className="ledger__total">
+            <span>{formatDecimal(ateKm)}</span>
+            <small>km</small>
+          </p>
           {lastFood ? (
-            <button className={s.last} onClick={() => onEditFood(lastFood)}>
-              <span className={s.lastTitle}>{lastFood.label}</span>
-              <span className={s.lastMeta}>
-                {formatWhen(lastFood.at)} · {formatKm(-lastFood.kmEquivalent)}
+            <button className="entry" type="button" onClick={() => onEditFood(lastFood)} aria-label={`Ändra ${lastFood.label}`}>
+              <span className="entry__title">{lastFood.label}</span>
+              <span className="entry__meta">
+                {formatWhen(lastFood.at)} · {lastFood.isEstimate ? 'ca ' : ''}
+                {formatKm(-lastFood.kmEquivalent)}
               </span>
             </button>
           ) : (
-            <span className={s.none}>Inget ännu</span>
+            <p className="entry entry--empty">
+              <span className="entry__title">Inget än</span>
+              <span className="entry__meta" />
+            </p>
           )}
         </div>
-        <div className={s.col} data-side="good">
-          <div className={s.colHead}>
-            <span>Sprungit</span>
-            <span className={s.colSum}>{formatKm(ranKm)}</span>
-          </div>
+        <div className="ledger__col" data-kind="ran" data-zero={roundTenth(ranKm) === 0 ? '' : undefined}>
+          <h2 className="ledger__label">
+            <Icon name="shoe" />
+            Sprungit
+          </h2>
+          <p className="ledger__total">
+            <span>{formatDecimal(ranKm)}</span>
+            <small>km</small>
+          </p>
           {lastRun ? (
-            <button className={s.last} onClick={() => onEditRun(lastRun)}>
-              <span className={s.lastTitle}>{formatKm(lastRun.km)}</span>
-              <span className={s.lastMeta}>
-                {formatWhen(lastRun.at)}
-              </span>
+            <button className="entry" type="button" onClick={() => onEditRun(lastRun)} aria-label={`Ändra ${formatKm(lastRun.km)}`}>
+              <span className="entry__title">{formatKm(lastRun.km)}</span>
+              <span className="entry__meta">{formatWhen(lastRun.at)}</span>
             </button>
           ) : (
-            <span className={s.none}>Inget ännu</span>
+            <p className="entry entry--empty">
+              <span className="entry__title">Inget än</span>
+              <span className="entry__meta" />
+            </p>
           )}
         </div>
       </section>
 
-      <nav className={s.actions} aria-label="Logga">
-        <button className={s.action} data-side="evil" onClick={onEat} aria-label="Jag åt något">
-          <CookieIcon size={44} />
+      <nav className="actions" aria-label="Logga">
+        <button className="act act--ate" type="button" onClick={onEat} aria-label="Jag åt något">
+          <Icon name="cookie" />
         </button>
-        <button className={s.action} data-side="good" onClick={onRun} aria-label="Jag sprang">
-          <RunningShoeIcon size={44} />
+        <button className="act act--ran" type="button" onClick={onRun} aria-label="Jag sprang">
+          <Icon name="shoe" />
         </button>
       </nav>
     </main>

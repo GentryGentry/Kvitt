@@ -1,50 +1,68 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import s from './Toast.module.css';
 
 interface ToastOptions {
+  /** Fetstilt del först, till exempel postens namn. */
+  title?: string;
   message: string;
   actionLabel?: string;
   onAction?: () => void | Promise<void>;
 }
 
-const Ctx = createContext<(t: ToastOptions) => void>(() => {});
-export const useToast = () => useContext(Ctx);
+interface ToastApi {
+  show: (t: ToastOptions) => void;
+  dismiss: () => void;
+}
+
+const Ctx = createContext<ToastApi>({ show: () => {}, dismiss: () => {} });
+export const useToast = () => useContext(Ctx).show;
+export const useDismissToast = () => useContext(Ctx).dismiss;
 
 const DURATION_MS = 6000;
+const OUT_MS = 120;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<(ToastOptions & { key: number }) | null>(null);
+  const [toast, setToast] = useState<(ToastOptions & { key: number; out?: boolean }) | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const key = useRef(0);
 
-  const show = useCallback((t: ToastOptions) => {
+  const dismiss = useCallback(() => {
     window.clearTimeout(timer.current);
-    setToast({ ...t, key: ++key.current });
-    timer.current = window.setTimeout(() => setToast(null), DURATION_MS);
+    setToast((t) => (t ? { ...t, out: true } : t));
+    timer.current = window.setTimeout(() => setToast(null), OUT_MS);
   }, []);
+
+  const show = useCallback(
+    (t: ToastOptions) => {
+      window.clearTimeout(timer.current);
+      setToast({ ...t, key: ++key.current });
+      timer.current = window.setTimeout(dismiss, DURATION_MS);
+    },
+    [dismiss],
+  );
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   return (
-    <Ctx.Provider value={show}>
+    <Ctx.Provider value={{ show, dismiss }}>
       {children}
       {toast && (
-        <div className={s.wrap} role="status" aria-live="polite" key={toast.key}>
-          <div className={s.toast}>
-            <span className={s.message}>{toast.message}</span>
-            {toast.actionLabel && (
-              <button
-                className={s.action}
-                onClick={async () => {
-                  window.clearTimeout(timer.current);
-                  setToast(null);
-                  await toast.onAction?.();
-                }}
-              >
-                {toast.actionLabel}
-              </button>
-            )}
-          </div>
+        <div className={`toast${toast.out ? ' is-out' : ''}`} role="status" aria-live="polite" key={toast.key}>
+          <p className="toast__msg">
+            {toast.title && <b>{toast.title}</b>}
+            {toast.title ? ' ' : ''}
+            {toast.message}
+          </p>
+          {toast.actionLabel && (
+            <button
+              className="toast__undo"
+              onClick={async () => {
+                dismiss();
+                await toast.onAction?.();
+              }}
+            >
+              {toast.actionLabel}
+            </button>
+          )}
         </div>
       )}
     </Ctx.Provider>

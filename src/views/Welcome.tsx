@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Brand } from '../components/Brand';
+import { Field, TextInput } from '../components/Fields';
 import { createSettings } from '../lib/actions';
 import { DEFAULT_SETTINGS, parseNumber, validateWeight } from '../lib/calc';
 import { requestPersistence } from '../lib/db';
-import s from './Welcome.module.css';
 
 export function Welcome() {
-  const [text, setText] = useState('');
+  const [text, setText] = useState('80');
   const [touched, setTouched] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
   const kg = parseNumber(text);
   const error = validateWeight(kg);
+  const showError = Boolean(error) && (text.trim() !== '' || touched);
+
+  useEffect(() => {
+    if (matchMedia('(pointer:fine)').matches) ref.current?.focus();
+  }, []);
 
   async function submit() {
     setTouched(true);
@@ -18,46 +25,40 @@ export function Welcome() {
   }
 
   return (
-    <main className={s.root}>
-      <div className={s.top}>
-        <h1 className={s.brand}>Kvitt</h1>
-        <p className={s.lead}>Väger det du äter mot det du springer.</p>
-      </div>
-      <form
-        className={s.form}
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit();
-        }}
-      >
-        <label className={s.label} htmlFor="weight">
-          Din vikt
-        </label>
-        <div className={s.inputWrap}>
-          <input
-            id="weight"
-            className={s.input}
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="80"
+    <main className="screen welcome">
+      <header className="welcome__head">
+        <Brand />
+      </header>
+      <section className="welcome__body">
+        <h2 className="welcome__title">
+          Hur mycket
+          <br />
+          väger du?
+        </h2>
+        <p className="welcome__lead">
+          Vikten används bara för att räkna om kcal till kilometer. Den stannar i telefonen.
+        </p>
+        <Field id="w-kg" label="Vikt" hero error={showError ? error : undefined}>
+          <TextInput
+            ref={ref}
+            id="w-kg"
+            hero
             value={text}
-            aria-invalid={touched && Boolean(error)}
-            onChange={(e) => setText(e.target.value)}
+            onChange={setText}
+            onBlur={() => setTouched(true)}
+            onEnter={submit}
+            inputMode="decimal"
+            enterKeyHint="go"
+            invalid={showError}
           />
-          <span className={s.unit}>kg</span>
-        </div>
-        {touched && error ? (
-          <p className={s.error}>{error}</p>
-        ) : (
-          <p className={s.note}>
-            Används för att räkna om mat till kilometer. Sparas bara på den här enheten. Går att ändra senare.
-          </p>
-        )}
-        <button className={s.button} type="submit">
-          Fortsätt
+          <span className="field__unit">kg</span>
+        </Field>
+      </section>
+      <footer className="welcome__foot">
+        <button className="btn btn--ink" type="button" disabled={Boolean(error)} onClick={submit}>
+          Börja
         </button>
-      </form>
+      </footer>
     </main>
   );
 }

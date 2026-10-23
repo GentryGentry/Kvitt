@@ -23,7 +23,13 @@ export interface LogFoodInput {
   item?: FoodItem;
   quantity: number;
   /** Ny sak att spara för okänd mat med egen kcal. */
-  newItem?: { name: string; kcalPerUnit: number; unitLabel: string; source: 'learned' | 'custom' };
+  newItem?: {
+    name: string;
+    kcalPerUnit: number;
+    unitLabel: string;
+    source: 'learned' | 'custom';
+    isFavorite?: boolean;
+  };
 }
 
 export interface Logged<T> {
@@ -80,7 +86,7 @@ export async function logFood(input: LogFoodInput): Promise<Logged<FoodEntry>> {
           kcalPerUnit: input.newItem.kcalPerUnit,
           unitLabel: input.newItem.unitLabel,
           aliases: [],
-          isFavorite: false,
+          isFavorite: input.newItem.isFavorite ?? false,
           useCount: 1,
           lastUsedAt: now,
           source: input.newItem.source,

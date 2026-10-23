@@ -1,21 +1,22 @@
 import type { BalanceState } from './calc';
 
+// En rad per läge och dag. Korta, torra, utan utropstecken. Första raden per läge kommer ur designen.
 export const LINES: Record<BalanceState, string[]> = {
   empty: [
+    'Ingenting loggat. Rent bord.',
     'Ingen skuld. Ännu.',
     'Tomt på båda sidor.',
-    'Vågen väntar på första posten.',
     'Inget att bokföra. Än.',
     'Skorna står kvar vid dörren.',
     'Ren tavla. Det varar sällan.',
   ],
   deepDebt: [
+    'Skorna har väntat länge nu.',
     'Räkningen kommer. Skorna väntar.',
     'Det här blir mer än en runda.',
-    'Vågen har tagit ställning. Åt vänster.',
-    'Stor skuld, men den är bara kilometer.',
-    'Skorna har väntat länge nu.',
-    'Kilometer går att betala av. En i taget.',
+    'Skulden är stor, men bara kilometer.',
+    'Kilometer går att betala av.',
+    'Dags att dra fram skorna.',
   ],
   debt: [
     'Bullen är inte betald än.',
@@ -28,25 +29,25 @@ export const LINES: Record<BalanceState, string[]> = {
   even: [
     'Jämnt. Misstänkt jämnt.',
     'Kvitt. Än så länge.',
-    'Vågen står still.',
     'Precis i balans.',
     'Ingen skuld, inget tillgodo.',
     'Jämnt skägg.',
+    'Ingenting att komma med.',
   ],
   credit: [
-    'Tillgodo. Fredagsmyset är förbetalt.',
+    'På rätt sida. Än så länge.',
+    'Tillgodo. Fredagsmyset är betalt.',
     'Du ligger före.',
     'Plus på kontot.',
     'Kilometrarna är redan sprungna.',
     'Ett litet förskott på något gott.',
-    'Vågen lutar rätt håll.',
   ],
   bigCredit: [
     'Du kan äta en hel pizza utan att blinka.',
     'Rejält tillgodo. Det finns utrymme.',
     'Fikat är betalt flera dagar framåt.',
     'Här har någon sprungit i förväg.',
-    'Stort förskott. Du väljer själv vad det blir.',
+    'Stort förskott. Du väljer själv.',
     'Mycket plus. Kanske en kanelbulle?',
   ],
 };

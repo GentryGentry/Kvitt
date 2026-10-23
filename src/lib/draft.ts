@@ -2,15 +2,23 @@ import { formatQty, parseNumber } from './calc';
 import { parseQuantity } from './parse';
 import type { FoodItem } from './types';
 
-export const MAX_KCAL = 20000;
-export const MIN_QTY = 0.5;
-export const MAX_QTY = 99;
+export const MAX_KCAL = 5000;
+export const KCAL_STEP = 50;
+export const KCAL_ERROR = 'Ange mellan 1 och 5 000 kcal.';
 
-export interface FoodDraftInput {
-  text: string;
+export interface PickedFood {
+  item: FoodItem;
+  quantity: number;
+  /** kcal som valet gav, för att se om användaren ändrat värdet efteråt. */
+  baseKcal: number;
+}
+
+export interface FoodFormState {
+  name: string;
   kcalText: string;
-  selected: { item: FoodItem; quantity: number } | null;
-  saveAsCustom: boolean;
+  picked: PickedFood | null;
+  /** Stjärnan satt på en ny sak som ännu inte finns sparad. */
+  wantFavorite: boolean;
 }
 
 export interface FoodDraft {
@@ -19,7 +27,7 @@ export interface FoodDraft {
   isEstimate: boolean;
   item?: FoodItem;
   quantity: number;
-  newItem?: { name: string; kcalPerUnit: number; unitLabel: string; source: 'learned' | 'custom' };
+  newItem?: { name: string; kcalPerUnit: number; unitLabel: string; source: 'custom'; isFavorite: boolean };
 }
 
 export function capitalize(text: string): string {
@@ -37,37 +45,43 @@ export function selectedLabel(item: FoodItem, quantity: number): string {
   return quantity === 1 ? item.name : `${formatQty(quantity)} × ${item.name}`;
 }
 
-/** Gör om fälten i matsheeten till en post. Undefined = går inte att logga än. */
-export function buildFoodDraft({ text, kcalText, selected, saveAsCustom }: FoodDraftInput): FoodDraft | undefined {
-  const exact = exactKcal(kcalText);
+/** kcal för en vald sak: kcal per enhet gånger antal. */
+export function pickedKcal(item: FoodItem, quantity: number): number {
+  return Math.round(item.kcalPerUnit * quantity);
+}
 
-  if (selected) {
-    const { item, quantity } = selected;
+/** Gör om formuläret till en post. Undefined = går inte att logga än. */
+export function buildFoodDraft({ name, kcalText, picked, wantFavorite }: FoodFormState): FoodDraft | undefined {
+  const kcal = exactKcal(kcalText);
+  if (kcal === undefined) return undefined;
+
+  if (picked) {
     return {
-      label: selectedLabel(item, quantity),
-      kcal: exact ?? Math.round(item.kcalPerUnit * quantity),
-      isEstimate: exact === undefined && item.source === 'builtin',
-      item,
-      quantity,
+      label: selectedLabel(picked.item, picked.quantity),
+      kcal,
+      // "ca" bara så länge värdet är det inbyggda riktvärdet, oredigerat.
+      isEstimate: picked.item.source === 'builtin' && kcal === picked.baseKcal,
+      item: picked.item,
+      quantity: picked.quantity,
     };
   }
 
-  if (exact === undefined) return undefined;
-  const trimmed = text.trim();
+  const trimmed = name.trim();
   const parsed = parseQuantity(trimmed);
   const quantity = parsed.explicit ? parsed.quantity : 1;
-  const name = capitalize(parsed.rest);
+  const itemName = capitalize(parsed.rest);
   return {
     label: trimmed ? capitalize(trimmed) : 'Något',
-    kcal: exact,
+    kcal,
     isEstimate: false,
     quantity,
-    newItem: name
+    newItem: itemName
       ? {
-          name,
-          kcalPerUnit: exact / quantity,
+          name: itemName,
+          kcalPerUnit: kcal / quantity,
           unitLabel: parsed.explicit ? 'st' : 'portion',
-          source: saveAsCustom ? 'custom' : 'learned',
+          source: 'custom',
+          isFavorite: wantFavorite,
         }
       : undefined,
   };
