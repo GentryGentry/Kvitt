@@ -14,10 +14,10 @@
   --text-2: #55514a;
   --text-3: #6b665d;
   --evil: #b8340f;
-  --evil-tint: rgba(184, 52, 15, 0.1);
+  --evil-tint: rgba(184, 52, 15, 0.16);
   --evil-line: rgba(184, 52, 15, 0.38);
   --good: #12704a;
-  --good-tint: rgba(18, 112, 74, 0.1);
+  --good-tint: rgba(18, 112, 74, 0.14);
   --good-line: rgba(18, 112, 74, 0.38);
   --scrim: rgba(24, 24, 26, 0.38);
   --sheet-shadow: 0 -12px 40px rgba(24, 24, 26, 0.18);
@@ -43,10 +43,10 @@
     --text-2: #aaa69d;
     --text-3: #8b8780;
     --evil: #ff7d5a;
-    --evil-tint: rgba(255, 125, 90, 0.12);
+    --evil-tint: rgba(255, 125, 90, 0.2);
     --evil-line: rgba(255, 125, 90, 0.4);
     --good: #5ccb95;
-    --good-tint: rgba(92, 203, 149, 0.1);
+    --good-tint: rgba(92, 203, 149, 0.16);
     --good-line: rgba(92, 203, 149, 0.4);
     --scrim: rgba(0, 0, 0, 0.55);
     --sheet-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
@@ -63,10 +63,10 @@
   --text-2: #aaa69d;
   --text-3: #8b8780;
   --evil: #ff7d5a;
-  --evil-tint: rgba(255, 125, 90, 0.12);
+  --evil-tint: rgba(255, 125, 90, 0.2);
   --evil-line: rgba(255, 125, 90, 0.4);
   --good: #5ccb95;
-  --good-tint: rgba(92, 203, 149, 0.1);
+  --good-tint: rgba(92, 203, 149, 0.16);
   --good-line: rgba(92, 203, 149, 0.4);
   --scrim: rgba(0, 0, 0, 0.55);
   --sheet-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);

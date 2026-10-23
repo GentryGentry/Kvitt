@@ -21,8 +21,8 @@
     var(--good-tint) calc(var(--split) + 26%),
     var(--good-tint) 100%
   );
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.5) 100%);
-  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.5) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.7) 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.7) 100%);
   transition: inherit;
 }
 
@@ -52,7 +52,7 @@
   justify-content: center;
   align-items: baseline;
   gap: 8px;
-  font-size: clamp(64px, min(22vw, 12dvh), 96px);
+  font-size: clamp(72px, min(26vw, 13dvh), 104px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.035em;
@@ -97,10 +97,8 @@
 
 .scaleWrap {
   flex: 1 1 0;
-  min-height: 120px;
-  display: flex;
-  align-items: center;
-  padding: 8px 0 0;
+  min-height: 150px;
+  padding: 14px 4px 10px;
 }
 
 .cols {
@@ -123,6 +121,7 @@
 
 .colHead {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
   gap: 8px;
   font-size: 13px;
@@ -134,7 +133,9 @@
 }
 
 .colSum {
+  font-size: 20px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text);
 }
 
@@ -188,7 +189,7 @@
 }
 
 .action {
-  min-height: 84px;
+  min-height: 92px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -203,22 +204,15 @@
 }
 
 .action[data-side='evil'] {
-  background: var(--evil-tint);
-  border-color: var(--evil-line);
-  color: var(--text);
-}
-
-.action[data-side='evil'] svg {
-  color: var(--evil);
+  background: var(--evil);
+  border-color: var(--evil);
+  color: var(--bg);
 }
 
 .action[data-side='good'] {
-  background: var(--good-tint);
-  border-color: var(--good-line);
-}
-
-.action[data-side='good'] svg {
-  color: var(--good);
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--bg);
 }
 
 .action:active {

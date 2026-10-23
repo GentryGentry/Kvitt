@@ -77,7 +77,7 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
       </section>
 
       <div className={s.scaleWrap}>
-        <Scale balanceKm={balanceKm} label={ariaLabel} />
+        <Scale balanceKm={balanceKm} ateKm={ateKm} ranKm={ranKm} label={ariaLabel} />
       </div>
 
       <section className={s.cols}>
