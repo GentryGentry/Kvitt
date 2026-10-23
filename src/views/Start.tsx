@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Cookie, Footprints } from 'lucide-react';
-import { Scale } from '../components/Scale';
+import { Cookie } from 'lucide-react';
+import { BalanceChart } from '../components/BalanceChart';
+import { RunningShoe } from '../components/icons';
 import {
   balanceState,
   balanceTone,
@@ -9,9 +10,9 @@ import {
   formatKm,
   isActive,
   kcalPerKm,
-  tiltDegrees,
 } from '../lib/calc';
 import { pickLine } from '../lib/copy';
+import { balanceSeries } from '../lib/stats';
 import { dayKey, formatWhen } from '../lib/time';
 import type { FoodEntry, ResetMarker, RunEntry, Settings } from '../lib/types';
 import s from './Start.module.css';
@@ -46,27 +47,28 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
   const lastFood = latest(foods.filter((f) => isActive(f.at, resets)));
   const lastRun = latest(runs.filter((r) => isActive(r.at, resets)));
 
-  const t = tiltDegrees(balanceKm) / 14;
-  const split = 50 - 22 * t;
+  const series = useMemo(
+    () => balanceSeries({ foods, runs, resets }, today),
+    [foods, runs, resets, today],
+  );
 
+  const numberText = formatKm(balanceKm, { sign: true, unit: false });
   const status = tone === 'minus' ? 'Skuld' : tone === 'plus' ? 'Tillgodo' : 'Jämnt';
   const kcal = Math.abs(balanceKm) * kcalPerKm(settings);
   const ariaLabel =
     tone === 'zero'
-      ? 'Våg i balans'
-      : `Våg: ${status.toLowerCase()} ${formatKm(Math.abs(balanceKm))}, lutar åt ${tone === 'minus' ? 'vänster' : 'höger'}`;
+      ? 'Saldokurva, senaste 14 dagarna: jämnt'
+      : `Saldokurva, senaste 14 dagarna. Nu: ${status.toLowerCase()} ${formatKm(Math.abs(balanceKm))}`;
 
   return (
-    <main className={s.root} style={{ ['--split' as string]: `${split}%` }}>
-      <div className={s.wash} aria-hidden="true" />
-
+    <main className={s.root}>
       <header className={s.top}>
         <h1 className={s.brand}>Kvitt</h1>
       </header>
 
       <section className={s.readout} aria-live="polite">
-        <div className={s.number} data-tone={tone}>
-          <span className={s.digits}>{formatKm(balanceKm, { sign: true, unit: false })}</span>
+        <div className={s.number} data-tone={tone} data-size={numberText.length > 6 ? 'xs' : numberText.length > 5 ? 's' : 'm'}>
+          <span className={s.digits}>{numberText}</span>
           <span className={s.unitKm}>km</span>
         </div>
         <p className={s.status}>
@@ -77,7 +79,7 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
       </section>
 
       <div className={s.scaleWrap}>
-        <Scale balanceKm={balanceKm} ateKm={ateKm} ranKm={ranKm} label={ariaLabel} />
+        <BalanceChart points={series} label={ariaLabel} />
       </div>
 
       <section className={s.cols}>
@@ -116,13 +118,11 @@ export function Start({ settings, foods, runs, resets, onEat, onRun, onEditFood,
       </section>
 
       <nav className={s.actions} aria-label="Logga">
-        <button className={s.action} data-side="evil" onClick={onEat}>
-          <Cookie size={22} strokeWidth={1.6} />
-          <span>Jag åt något</span>
+        <button className={s.action} data-side="evil" onClick={onEat} aria-label="Jag åt något">
+          <Cookie size={40} strokeWidth={1.6} />
         </button>
-        <button className={s.action} data-side="good" onClick={onRun}>
-          <Footprints size={22} strokeWidth={1.6} />
-          <span>Jag sprang</span>
+        <button className={s.action} data-side="good" onClick={onRun} aria-label="Jag sprang">
+          <RunningShoe size={40} strokeWidth={1.6} />
         </button>
       </nav>
     </main>

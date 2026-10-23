@@ -12,7 +12,6 @@ import {
   latestReset,
   parseNumber,
   roundRunKm,
-  tiltDegrees,
   validateRunKm,
   withEditedKcal,
   makeFoodFields,
@@ -160,20 +159,6 @@ describe('visning', () => {
     expect(balanceTone(-0.049)).toBe('zero');
     expect(balanceTone(0.05)).toBe('plus');
     expect(balanceTone(-0.05)).toBe('minus');
-  });
-});
-
-describe('våglutning', () => {
-  it('är 0 vid noll, tecknet följer saldot och mättas vid 14 grader', () => {
-    expect(tiltDegrees(0)).toBe(0);
-    expect(tiltDegrees(-5)).toBeLessThan(0);
-    expect(tiltDegrees(5)).toBeGreaterThan(0);
-    expect(tiltDegrees(1000)).toBeCloseTo(14, 5);
-    expect(tiltDegrees(-1000)).toBeCloseTo(-14, 5);
-  });
-  it('är känslig nära noll', () => {
-    expect(Math.abs(tiltDegrees(1))).toBeGreaterThan(1);
-    expect(Math.abs(tiltDegrees(1))).toBeLessThan(Math.abs(tiltDegrees(2)));
   });
 });
 

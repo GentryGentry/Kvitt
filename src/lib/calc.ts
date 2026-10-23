@@ -148,11 +148,6 @@ export function balanceTone(km: number): Tone {
   return r > 0 ? 'plus' : r < 0 ? 'minus' : 'zero';
 }
 
-/** Positiv vinkel = medurs = höger sida ner = tillgodo. Mättas mjukt. */
-export function tiltDegrees(balanceKm: number, maxDeg = 14, scaleKm = 6): number {
-  return maxDeg * Math.tanh(balanceKm / scaleKm);
-}
-
 export type BalanceState = 'empty' | 'deepDebt' | 'debt' | 'even' | 'credit' | 'bigCredit';
 
 export function balanceState(km: number, count: number): BalanceState {
